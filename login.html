@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 计算机金融实验班</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-box">
+            <div class="login-logo">
+                <img src="photo/image.png" alt="南京大学校徽" class="logo-img">
+                <h1>计算机金融实验班</h1>
+            </div>
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="login">登录</button>
+                <button class="auth-tab" data-tab="register">注册</button>
+            </div>
+            
+            <form id="login-form" class="auth-form">
+                <input type="text" name="username" placeholder="用户名" required>
+                <input type="password" name="password" placeholder="密码" required>
+                <button type="submit">登录</button>
+            </form>
+            
+            <form id="register-form" class="auth-form" style="display: none;">
+                <input type="text" name="username" placeholder="用户名" required>
+                <input type="email" name="email" placeholder="邮箱" required>
+                <input type="password" name="password" placeholder="密码" required>
+                <input type="password" name="confirmPassword" placeholder="确认密码" required>
+                <button type="submit">注册</button>
+            </form>
+        </div>
+    </div>
+    <script src="login.js"></script>
+</body>
+</html> 

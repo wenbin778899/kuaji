@@ -1,0 +1,145 @@
+const express = require('express');
+const mysql = require('mysql2');
+const bcrypt = require('bcrypt');
+const cors = require('cors');
+const path = require('path');
+const app = express();
+
+// 中间件配置
+app.use(express.json());
+app.use(cors({
+    origin: process.env.FRONTEND_URL || '*',
+    credentials: true
+}));
+
+// 静态文件服务
+app.use(express.static(path.join(__dirname)));
+
+// 身份验证中间件
+const authMiddleware = (req, res, next) => {
+    // 允许访问登录页面和API
+    const publicPaths = ['/login.html', '/api/login', '/api/register', '/styles.css', '/login.js'];
+    const isPublicPath = publicPaths.some(path => req.path.includes(path));
+    
+    if (isPublicPath) {
+        next();
+        return;
+    }
+
+    // 检查是否有认证token
+    const authToken = req.headers.authorization;
+    if (!authToken) {
+        res.redirect('/login.html');
+        return;
+    }
+    next();
+};
+
+// 应用身份验证中间件
+app.use(authMiddleware);
+
+// 数据库配置
+const db = mysql.createConnection({
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || 'lwb778899',
+    database: process.env.DB_NAME || 'cs_finance_web'
+});
+
+// 连接数据库
+db.connect((err) => {
+  if (err) {
+    console.error('数据库连接失败:', err);
+    return;
+  }
+  console.log('已连接到MySQL数据库');
+  
+  // 创建用户表
+  const createTableQuery = `
+    CREATE TABLE IF NOT EXISTS users (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      username VARCHAR(50) UNIQUE NOT NULL,
+      password VARCHAR(255) NOT NULL,
+      email VARCHAR(100) UNIQUE NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+  
+  db.query(createTableQuery, (err) => {
+    if (err) {
+      console.error('创建用户表失败:', err);
+    } else {
+      console.log('用户表已创建/已存在');
+    }
+  });
+});
+
+// 注册接口
+app.post('/api/register', async (req, res) => {
+  const { username, password, email } = req.body;
+  
+  try {
+    // 检查用户名是否已存在
+    const checkUser = 'SELECT * FROM users WHERE username = ? OR email = ?';
+    db.query(checkUser, [username, email], async (err, results) => {
+      if (err) {
+        return res.status(500).json({ error: '服务器错误' });
+      }
+      
+      if (results.length > 0) {
+        return res.status(400).json({ error: '用户名或邮箱已存在' });
+      }
+      
+      // 加密密码
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      // 插入新用户
+      const insertUser = 'INSERT INTO users (username, password, email) VALUES (?, ?, ?)';
+      db.query(insertUser, [username, hashedPassword, email], (err) => {
+        if (err) {
+          return res.status(500).json({ error: '注册失败' });
+        }
+        res.json({ message: '注册成功' });
+      });
+    });
+  } catch (error) {
+    res.status(500).json({ error: '服务器错误' });
+  }
+});
+
+// 登录接口
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+  
+  const query = 'SELECT * FROM users WHERE username = ?';
+  db.query(query, [username], async (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: '服务器错误' });
+    }
+    
+    if (results.length === 0) {
+      return res.status(401).json({ error: '用户名或密码错误' });
+    }
+    
+    const user = results[0];
+    const validPassword = await bcrypt.compare(password, user.password);
+    
+    if (!validPassword) {
+      return res.status(401).json({ error: '用户名或密码错误' });
+    }
+    
+    // 生成简单的token（实际应用中应使用JWT）
+    const token = Buffer.from(username).toString('base64');
+    res.json({ 
+      message: '登录成功', 
+      username: user.username,
+      token: token 
+    });
+  });
+});
+
+// 端口配置
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`服务器运行在端口 ${PORT}`);
+}); 
