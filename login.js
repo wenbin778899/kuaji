@@ -1,5 +1,5 @@
 // API基础URL配置
-const API_BASE_URL = 'https://your-app-name.railway.app'; // 替换为Railway提供的实际URL
+const API_BASE_URL = 'https://nozomi.proxy.rlwy.net:21839';
 
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
