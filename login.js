@@ -43,7 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Accept': 'application/json'
                 },
                 body: JSON.stringify(data),
-                mode: 'cors',
                 credentials: 'include'
             });
             
