@@ -15,7 +15,25 @@ app.use(cors({
 }));
 
 // 静态文件服务
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname), {
+    maxAge: '1h',  // 缓存一小时
+    setHeaders: (res, path, stat) => {
+        // 为图片设置正确的缓存控制
+        if (path.endsWith('.png') || path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+            res.set('Cache-Control', 'public, max-age=3600');
+            res.set('Vary', 'Accept-Encoding');
+        }
+    }
+}));
+
+// 专门用于处理photo目录的路由
+app.use('/photo', express.static(path.join(__dirname, 'photo'), {
+    maxAge: '1h',
+    setHeaders: (res, path, stat) => {
+        res.set('Cache-Control', 'public, max-age=3600');
+        res.set('Vary', 'Accept-Encoding');
+    }
+}));
 
 // 身份验证中间件
 const authMiddleware = (req, res, next) => {
