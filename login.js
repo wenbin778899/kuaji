@@ -1,5 +1,5 @@
 // API基础URL配置
-const API_BASE_URL = 'http://nozomi.proxy.rlwy.net:21839';
+const API_BASE_URL = 'http://nozomi.proxy.rlwy.net:3000';
 
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
