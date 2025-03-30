@@ -53,7 +53,7 @@ app.use(authMiddleware);
 // 数据库配置
 const db = mysql.createPool({
     host: process.env.MYSQL_HOST || 'nozomi.proxy.rlwy.net',
-    port: process.env.MYSQL_PORT || 3306,
+    port: process.env.MYSQL_PORT || 21839,
     user: process.env.MYSQL_USER || 'root',
     password: process.env.MYSQL_PASSWORD || 'fxShwCsSyJfVrrsxeDtVlLllysZlERma',
     database: process.env.MYSQL_DATABASE || 'railway',
