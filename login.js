@@ -1,5 +1,5 @@
 // API基础URL配置
-const API_BASE_URL = 'http://nozomi.proxy.rlwy.net:3000';
+const API_BASE_URL = 'https://kuaji-production.up.railway.app';
 
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');

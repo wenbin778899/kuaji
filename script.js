@@ -257,8 +257,10 @@ document.addEventListener('DOMContentLoaded', () => {
             password: formData.get('password')
         };
         
+        const API_BASE_URL = 'https://kuaji-production.up.railway.app';
+        
         try {
-            const response = await fetch('http://localhost:3000/api/register', {
+            const response = await fetch(`${API_BASE_URL}/api/register`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
