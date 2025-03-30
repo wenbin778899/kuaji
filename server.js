@@ -39,73 +39,96 @@ const authMiddleware = (req, res, next) => {
 app.use(authMiddleware);
 
 // 数据库配置
-const db = mysql.createConnection({
-    host: process.env.MYSQL_HOST,
-    port: process.env.MYSQL_PORT,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    database: process.env.MYSQL_DATABASE
+const db = mysql.createPool({
+    host: process.env.MYSQL_HOST || 'nozomi.proxy.rlwy.net',
+    port: process.env.MYSQL_PORT || 3306,
+    user: process.env.MYSQL_USER || 'root',
+    password: process.env.MYSQL_PASSWORD || 'fxShwCsSyJfVrrsxeDtVlLllysZlERma',
+    database: process.env.MYSQL_DATABASE || 'railway',
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
 });
 
-// 连接数据库
-db.connect((err) => {
-  if (err) {
-    console.error('数据库连接失败:', err);
-    return;
-  }
-  console.log('已连接到MySQL数据库');
-  
-  // 创建用户表
-  const createTableQuery = `
-    CREATE TABLE IF NOT EXISTS users (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      username VARCHAR(50) UNIQUE NOT NULL,
-      password VARCHAR(255) NOT NULL,
-      email VARCHAR(100) UNIQUE NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `;
-  
-  db.query(createTableQuery, (err) => {
+// 测试连接池
+db.getConnection((err, connection) => {
     if (err) {
-      console.error('创建用户表失败:', err);
-    } else {
-      console.log('用户表已创建/已存在');
+        console.error('数据库连接失败:', err);
+        return;
     }
-  });
+    console.log('数据库连接成功');
+    
+    // 创建用户表
+    const createTableQuery = `
+        CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(50) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            email VARCHAR(100) UNIQUE NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    `;
+    
+    connection.query(createTableQuery, (err) => {
+        if (err) {
+            console.error('创建用户表失败:', err);
+        } else {
+            console.log('用户表已创建/已存在');
+        }
+        connection.release();
+    });
+});
+
+// 处理错误事件
+db.on('error', (err) => {
+    console.error('数据库池错误:', err);
+    if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+        console.log('尝试重新连接数据库...');
+    }
 });
 
 // 注册接口
 app.post('/api/register', async (req, res) => {
-  const { username, password, email } = req.body;
-  
-  try {
-    // 检查用户名是否已存在
-    const checkUser = 'SELECT * FROM users WHERE username = ? OR email = ?';
-    db.query(checkUser, [username, email], async (err, results) => {
-      if (err) {
-        return res.status(500).json({ error: '服务器错误' });
-      }
-      
-      if (results.length > 0) {
-        return res.status(400).json({ error: '用户名或邮箱已存在' });
-      }
-      
-      // 加密密码
-      const hashedPassword = await bcrypt.hash(password, 10);
-      
-      // 插入新用户
-      const insertUser = 'INSERT INTO users (username, password, email) VALUES (?, ?, ?)';
-      db.query(insertUser, [username, hashedPassword, email], (err) => {
-        if (err) {
-          return res.status(500).json({ error: '注册失败' });
-        }
-        res.json({ message: '注册成功' });
-      });
-    });
-  } catch (error) {
-    res.status(500).json({ error: '服务器错误' });
-  }
+    const { username, password, email } = req.body;
+    
+    try {
+        db.getConnection((err, connection) => {
+            if (err) {
+                return res.status(500).json({ error: '数据库连接失败' });
+            }
+            
+            // 检查用户名是否已存在
+            connection.query('SELECT * FROM users WHERE username = ? OR email = ?', 
+                [username, email], 
+                async (err, results) => {
+                    if (err) {
+                        connection.release();
+                        return res.status(500).json({ error: '服务器错误' });
+                    }
+                    
+                    if (results.length > 0) {
+                        connection.release();
+                        return res.status(400).json({ error: '用户名或邮箱已存在' });
+                    }
+                    
+                    // 加密密码
+                    const hashedPassword = await bcrypt.hash(password, 10);
+                    
+                    // 插入新用户
+                    connection.query('INSERT INTO users (username, password, email) VALUES (?, ?, ?)',
+                        [username, hashedPassword, email],
+                        (err) => {
+                            connection.release();
+                            if (err) {
+                                return res.status(500).json({ error: '注册失败' });
+                            }
+                            res.json({ message: '注册成功' });
+                        });
+                });
+        });
+    } catch (error) {
+        res.status(500).json({ error: '服务器错误' });
+    }
 });
 
 // 登录接口
