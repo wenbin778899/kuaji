@@ -8,7 +8,7 @@ const app = express();
 // 中间件配置
 app.use(express.json());
 app.use(cors({
-    origin: '*',  // 临时允许所有来源
+    origin: ['https://kuaji-production.up.railway.app', 'http://localhost:3000'],
     credentials: true
 }));
 
@@ -56,10 +56,10 @@ app.use(authMiddleware);
 
 // 数据库配置
 const db = mysql.createPool({
-    host: process.env.MYSQL_HOST || 'nozomi.proxy.rlwy.net',
+    host: process.env.MYSQL_HOST || 'mysql.railway.internal',
     port: process.env.MYSQL_PORT || 3306,
     user: process.env.MYSQL_USER || 'root',
-    password: process.env.MYSQL_PASSWORD || 'fxShwCsSyJfVrrsxeDtVlLllysZlERma',
+    password: process.env.MYSQL_PASSWORD,
     database: process.env.MYSQL_DATABASE || 'railway',
     waitForConnections: true,
     connectionLimit: 10,
