@@ -8,17 +8,33 @@ const app = express();
 // 中间件配置
 app.use(express.json());
 app.use(cors({
-    origin: process.env.FRONTEND_URL || '*',
+    origin: '*',  // 临时允许所有来源
     credentials: true
 }));
 
 // 静态文件服务
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname), {
+    setHeaders: (res, path, stat) => {
+        res.set('Access-Control-Allow-Origin', '*');
+        res.set('Access-Control-Allow-Methods', 'GET');
+        res.set('Access-Control-Allow-Headers', 'Content-Type');
+    }
+}));
 
 // 身份验证中间件
 const authMiddleware = (req, res, next) => {
     // 允许访问登录页面和API
-    const publicPaths = ['/login.html', '/api/login', '/api/register', '/styles.css', '/login.js'];
+    const publicPaths = [
+        '/login.html', 
+        '/api/login', 
+        '/api/register', 
+        '/styles.css', 
+        '/login.js',
+        '/script.js',
+        '/index.html',
+        '/photo',
+        '/'
+    ];
     const isPublicPath = publicPaths.some(path => req.path.includes(path));
     
     if (isPublicPath) {

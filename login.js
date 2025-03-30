@@ -39,10 +39,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`${API_BASE_URL}/api/login`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 },
                 body: JSON.stringify(data),
-                rejectUnauthorized: false
+                mode: 'cors',
+                credentials: 'include'
             });
             
             const result = await response.json();
@@ -55,6 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert(result.error);
             }
         } catch (error) {
+            console.error('Error:', error);
             alert('登录失败，请稍后重试');
         }
     });
